@@ -119,6 +119,10 @@ struct External {
 
   ExternalPropagator *propagator;
   DecisionPolarityAdvisor *decision_polarity_advisor = nullptr;
+
+  // If there is a clause importer (an STP extension, see 'import.cpp').
+
+  ClauseImporter *clause_importer = nullptr;
   FILE *trace_api_file; // Only for user propagator interaction tracing
 
   vector<bool> is_observed; // Quick flag for each external variable

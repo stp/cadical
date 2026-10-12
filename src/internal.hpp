@@ -868,6 +868,15 @@ struct Internal {
   int reuse_trail ();
   void restart ();
 
+  // Clause import and diversification (STP extensions) in 'import.cpp'.
+  //
+  int64_t import_limit = 0;
+  Solver::ImportStatistics import_stats = {0, 0, 0, 0, 0, 0};
+  vector<int> import_external;
+  bool importing ();
+  void import_clauses ();
+  void diversify (int seed, int phase, bool shuffle);
+
   // Functions to set and reset certain 'phases'.
   //
   void clear_phases (vector<signed char> &); // reset argument to zero

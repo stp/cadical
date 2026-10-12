@@ -1029,6 +1029,57 @@ void Solver::connect_learner (Learner *learner) {
   LOG_API_CALL_END ("connect_learner");
 }
 
+void Solver::connect_clause_importer (ClauseImporter *importer) {
+  LOG_API_CALL_BEGIN ("connect_clause_importer");
+  REQUIRE_VALID_STATE ();
+  REQUIRE (importer, "can not connect zero clause importer");
+  external->clause_importer = importer;
+  internal->import_limit = internal->stats.conflicts;
+  LOG_API_CALL_END ("connect_clause_importer");
+}
+
+void Solver::disconnect_clause_importer () {
+  LOG_API_CALL_BEGIN ("disconnect_clause_importer");
+  REQUIRE_VALID_STATE ();
+  external->clause_importer = nullptr;
+  LOG_API_CALL_END ("disconnect_clause_importer");
+}
+
+Solver::ImportStatistics Solver::import_statistics () const {
+  return internal->import_stats;
+}
+
+void Solver::diversify (int seed, int phase, bool shuffle) {
+  LOG_API_CALL_BEGIN ("diversify");
+  REQUIRE_VALID_STATE ();
+  REQUIRE (state () != SOLVING, "can not diversify while solving");
+  internal->diversify (seed, phase, shuffle);
+  LOG_API_CALL_END ("diversify");
+}
+
+bool Solver::set_search_option (const char *name, int val) {
+  LOG_API_CALL_BEGIN ("set_search_option", name, val);
+  REQUIRE_VALID_STATE ();
+  REQUIRE (state () != SOLVING, "can not set options while solving");
+  // The search modes, read at each mode switch; everything else a forked
+  // copy varies goes through diversify().
+  static const char *const search_only[] = {"stabilize", "stabilizeonly",
+                                            nullptr};
+  bool known = false;
+  for (const char *const *n = search_only; *n; n++)
+    known = known || !strcmp (*n, name);
+  const Option *o = known ? Options::has (name) : nullptr;
+  // A later solve that finds stable-only search on in focused mode trips
+  // its 'assert (stable)' (init_search_limits).
+  const bool late_stable_only = !strcmp (name, "stabilizeonly") && val &&
+                                internal->lim.initialized &&
+                                !internal->stable;
+  bool res = o && o->lo <= val && val <= o->hi && !late_stable_only &&
+             internal->opts.set (name, val);
+  LOG_API_CALL_END ("set_search_option", name, val, res);
+  return res;
+}
+
 void Solver::disconnect_learner () {
   LOG_API_CALL_BEGIN ("disconnect_learner");
   REQUIRE_VALID_STATE ();

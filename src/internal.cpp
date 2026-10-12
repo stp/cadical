@@ -319,6 +319,8 @@ int Internal::cdcl_loop_with_inprocessing () {
       break;                               // decision or conflict limit
     else if (terminated_asynchronously ()) // externally terminated
       break;
+    else if (importing ())
+      import_clauses (); // shared clauses (STP extension)
     else if (restarting ())
       restart (); // restart by backtracking
     else if (rephasing ())

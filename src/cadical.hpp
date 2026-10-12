@@ -229,6 +229,7 @@ class ClauseIterator;
 class WitnessIterator;
 class ExternalPropagator;
 class DecisionPolarityAdvisor;
+class ClauseImporter;
 class Tracer;
 struct InternalTracer;
 class FileTracer;
@@ -387,6 +388,48 @@ public:
   //
   void connect_learner (Learner *learner);
   void disconnect_learner ();
+
+  // Clause import (an STP extension). The importer is polled during search,
+  // between propagation and the next decision, once every
+  // 'import_interval ()' conflicts; one poll accepts every unit and at most
+  // 'import_budget ()' longer clauses. Every clause it hands over must be
+  // implied by the clauses added to this solver (for example a clause another
+  // solver learned over the same clauses); it is added as a redundant
+  // (learned) clause. A clause naming a variable that is not active here
+  // (eliminated, substituted, never used, or above 'vars ()') is dropped, as
+  // is everything while a proof is being traced. Import is best effort.
+  //
+  //   require (VALID)
+  //   ensure (VALID)
+  //
+  void connect_clause_importer (ClauseImporter *importer);
+  void disconnect_clause_importer ();
+  struct ImportStatistics {
+    int64_t polls, clauses, units, dropped, satisfied, backtracks;
+  };
+  ImportStatistics import_statistics () const;
+
+  // Search diversification for a solver that already holds clauses (an STP
+  // extension: 'set' accepts options only before the first clause). Only
+  // search state changes: the random seed, every saved phase ('phase' 1
+  // true, -1 false, 0 pseudo-random from 'seed', any other value keeps
+  // them), and with 'shuffle' the order of the decision queue and scores.
+  //
+  //   require (VALID)
+  //   ensure (VALID)
+  //
+  void diversify (int seed, int phase, bool shuffle);
+
+  // The search-mode options 'stabilize' and 'stabilizeonly', which the
+  // search reads at each mode switch, so they may change after the first
+  // clause. Stable-only search is set up by the first solve: turning
+  // 'stabilizeonly' on after a solve that ended in focused mode is refused
+  // (false), as is any other name or a value outside the option's range.
+  //
+  //   require (VALID)
+  //   ensure (VALID)
+  //
+  bool set_search_option (const char *name, int val);
 
   // ====== END IPASIR =====================================================
 
@@ -1255,6 +1298,25 @@ public:
 // Allows to connect an external propagator to propagate values to variables
 // with an external clause as a reason or to learn new clauses during the
 // CDCL loop (without restart).
+
+// Supplies clauses to import (see 'connect_clause_importer'). Called from
+// inside the search: it must not call back into the solver.
+
+class ClauseImporter {
+public:
+  virtual ~ClauseImporter () {}
+  // Conflicts between two polls; read at each poll.
+  virtual int import_interval () { return 256; }
+  // The most clauses of two or more literals this poll accepts (units are
+  // never limited). Called once at the start of every poll, before its
+  // first 'import_clause', so an importer may select the poll's clauses
+  // here. A poll ends at the first 'import_clause' returning false; a
+  // longer clause beyond the budget is dropped and ends the poll.
+  virtual int import_budget () { return 1 << 14; }
+  // Fill 'clause' with the external literals of one clause (no terminating
+  // zero) and return true, or return false when nothing is pending.
+  virtual bool import_clause (std::vector<int> &clause) = 0;
+};
 
 class DecisionPolarityAdvisor {
 public:
