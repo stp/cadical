@@ -646,12 +646,11 @@ CaDiCaL::CubesWithStatus External::generate_cubes (int depth,
     MSG ("lookahead internal %d external %d", ilit, elit);
     return elit;
   };
-  auto externalize_map = [this, externalize] (std::vector<int> cube) {
-    (void) this;
+  for (auto &cube : cubes.cubes) {
     MSG ("Cube : ");
-    std::for_each (begin (cube), end (cube), externalize);
-  };
-  std::for_each (begin (cubes.cubes), end (cubes.cubes), externalize_map);
+    for (int &lit : cube)
+      lit = externalize (lit);
+  }
 
   return cubes;
 }

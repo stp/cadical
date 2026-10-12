@@ -118,6 +118,7 @@ run example_constraint
 run example_tracer
 run terminate
 run learn
+run external_cubes
 run cfreeze
 run traverse
 run cipasir
