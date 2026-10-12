@@ -1100,6 +1100,21 @@ void Solver::connect_external_propagator (ExternalPropagator *propagator) {
   LOG_API_CALL_END ("connect_external_propagator");
 }
 
+void Solver::connect_decision_polarity_advisor (DecisionPolarityAdvisor *p) {
+  REQUIRE_VALID_STATE ();
+  REQUIRE (p, "can not connect zero decision polarity advisor");
+  REQUIRE (external->propagator && !external->propagator->is_lazy,
+           "decision polarity advice requires a non-lazy propagator");
+  REQUIRE (!external->decision_polarity_advisor,
+           "can not connect more than one decision polarity advisor");
+  external->decision_polarity_advisor = p;
+}
+
+void Solver::disconnect_decision_polarity_advisor () {
+  REQUIRE_VALID_STATE ();
+  external->decision_polarity_advisor = nullptr;
+}
+
 void Solver::disconnect_external_propagator () {
   LOG_API_CALL_BEGIN ("disconnect_external_propagator");
   REQUIRE_VALID_STATE ();
@@ -1108,6 +1123,7 @@ void Solver::disconnect_external_propagator () {
   external->reset_observed_vars ();
 
   external->propagator = 0;
+  external->decision_polarity_advisor = nullptr;
   internal->set_changed_val ();
   internal->external_prop = false;
   internal->external_prop_is_lazy = true;

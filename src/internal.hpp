@@ -828,6 +828,7 @@ struct Internal {
   void notify_backtrack (size_t new_level);
   void force_backtrack (int new_level);
   int ask_decision ();
+  int ask_decision_polarity (int);
   bool ask_external_clause ();
   void add_observed_var (int ilit);
   void remove_observed_var (int ilit);

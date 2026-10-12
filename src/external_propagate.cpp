@@ -1361,6 +1361,24 @@ void Internal::notify_backtrack (size_t new_level) {
 // Ask the external propagator if there is a suggested literal as next
 // decision.
 //
+int Internal::ask_decision_polarity (int ilit) {
+  if (!external->decision_polarity_advisor || !external_prop ||
+      external_prop_is_lazy || private_steps || !observed (ilit))
+    return ilit;
+  // ask_decision already delivered pending assignments. The selected
+  // variable is still open, and the callback cannot change that selection.
+  assert (!val (ilit));
+  const int elit = externalize (ilit);
+  LOG_INTERACTION_FOR (advise_decision_polarity, elit);
+  const int advice =
+      external->decision_polarity_advisor->advise_decision_polarity (elit);
+  LOG_INTERACTION_RETURN_FOR (advise_decision_polarity, elit, advice);
+  CB_REQUIRE (!advice || advice == elit || advice == -elit,
+              "advise_decision_polarity", advice,
+              "polarity advice must preserve the selected variable.");
+  return advice == -elit ? -ilit : ilit;
+}
+
 int Internal::ask_decision () {
   if (!external_prop || external_prop_is_lazy || private_steps)
     return 0;

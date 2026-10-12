@@ -228,6 +228,7 @@ class Terminator;
 class ClauseIterator;
 class WitnessIterator;
 class ExternalPropagator;
+class DecisionPolarityAdvisor;
 class Tracer;
 struct InternalTracer;
 class FileTracer;
@@ -411,6 +412,13 @@ public:
   //
   void connect_external_propagator (ExternalPropagator *propagator);
   void disconnect_external_propagator ();
+  // Optional read-only advice after ordinary decision-variable selection.
+  // Requires a connected non-lazy external propagator. Only observed
+  // variables are offered; assumptions and external decisions are excluded.
+  // The advisor must outlive the connection and may only choose the sign.
+  // Disconnecting the external propagator also disconnects this advisor.
+  void connect_decision_polarity_advisor (DecisionPolarityAdvisor *);
+  void disconnect_decision_polarity_advisor ();
 
   // Mark as 'observed' those variables that are relevant to the external
   // propagator. External propagation, clause addition during search and
@@ -1247,6 +1255,14 @@ public:
 // Allows to connect an external propagator to propagate values to variables
 // with an external clause as a reason or to learn new clauses during the
 // CDCL loop (without restart).
+
+class DecisionPolarityAdvisor {
+public:
+  virtual ~DecisionPolarityAdvisor () {}
+  // Return 0 to retain the default, or +/- the offered literal. This
+  // callback must not mutate the solver, add variables, or backtrack.
+  virtual int advise_decision_polarity (int default_literal) = 0;
+};
 
 class ExternalPropagator {
 

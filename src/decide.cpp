@@ -335,6 +335,8 @@ int Internal::decide () {
         int idx = next_decision_variable ();
         const bool target = (opts.target > 1 || (stable && opts.target));
         decision = decide_phase (idx, target);
+        if (external->decision_polarity_advisor)
+          decision = ask_decision_polarity (decision);
       }
       search_assume_decision (decision);
     }
