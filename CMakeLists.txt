@@ -96,6 +96,17 @@ if(NOT HAVE_CLOSEFROM)
     target_compile_definitions(cadical PRIVATE NCLOSEFROM)
 endif()
 
+# MinGW's GCC lays out bitfields as MSVC does unless told otherwise: a field
+# whose declared type differs from the previous field's starts a new storage
+# unit. Clause follows its `unsigned used` with `bool` flags, so the header
+# grows from 24 bytes to 32, and every clause in the arena by 8 bytes with it
+# -- a ternary clause takes 48 rather than 40. Nothing breaks; the solver just
+# touches more memory. cadical.hpp declares no bitfields, so an embedder's own
+# layout does not have to agree with the library's.
+if(WIN32 AND NOT MSVC)
+    target_compile_options(cadical PRIVATE -mno-ms-bitfields)
+endif()
+
 install(TARGETS cadical ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}")
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/cadical.hpp"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/cadical")
